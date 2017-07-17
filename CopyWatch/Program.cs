@@ -18,7 +18,7 @@ namespace CopyWatch
             return new Action<int>(x =>
             {
                 var current = Interlocked.Increment(ref last);
-                var bob = Task.Delay(x).ContinueWith(task =>
+                Task.Delay(x).ContinueWith(task =>
                 {
                     if (current == last) func();
                     task.Dispose();
@@ -43,6 +43,7 @@ namespace CopyWatch
 
     internal class Program
     {
+        public static int BufferTime = 5000;
         public static Action<int> DoneAction = null;
 
         public static List<string> NewDirectories = new List<string>();
@@ -100,7 +101,7 @@ namespace CopyWatch
             {
                 while (IsFileLocked(new FileInfo(fullPath)))
                 {
-                    DoneAction(2000);
+                    DoneAction(BufferTime);
                 }
             }
             else
@@ -114,7 +115,7 @@ namespace CopyWatch
                 }
             }
 
-            DoneAction(5000);
+            DoneAction(BufferTime);
         }
 
         public static void OnNewFolderEvent(object source, FileSystemEventArgs e)
@@ -125,11 +126,14 @@ namespace CopyWatch
 
         private static void Main(string[] args)
         {
-            if (args.Length != 2)
+            if (args.Length != 2 && args.Length != 3)
             {
-                Console.WriteLine(@"copywatch ""path to folder to watch"" ""path to file/script to execute whenever copying is finished.""");
+                Console.WriteLine(@"copywatch ""path to folder to watch"" ""path to file/script to execute whenever copying is finished."" buffer-time");
                 return;
             }
+
+            if (args.Length == 3)
+                BufferTime = int.Parse(args[2]);
 
             WatchFolderPath = args[0].TrimEnd(new[] { '\\' }).ToLower();
 
